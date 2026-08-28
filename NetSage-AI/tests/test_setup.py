@@ -37,7 +37,7 @@ def test_csv_schemas():
     cases_csv = os.path.join(base_dir, 'data', 'cases.csv')
     human_review_csv = os.path.join(base_dir, 'review', 'human_review.csv')
     
-    cases_header_expected = ["case_id", "symptom", "topology_note", "show_outputs", "expected_fault", "osi_layer", "concept", "severity"]
+    cases_header_expected = ["case_id", "symptom", "topology_note", "show_outputs", "expected_fault", "osi_layer", "concept", "severity", "expected_fix", "verification"]
     human_review_header_expected = ["case_id", "ai_root_cause", "ai_confidence", "human_decision", "human_correction", "reason", "reviewer", "review_timestamp"]
     
     all_pass = True
@@ -73,8 +73,8 @@ def test_dataset_validation():
         reader = csv.DictReader(f)
         rows = list(reader)
         
-    if len(rows) != 30:
-        print(f"FAIL: Expected exactly 30 cases, found {len(rows)}.")
+    if len(rows) != 35:
+        print(f"FAIL: Expected exactly 35 cases, found {len(rows)}.")
         sys.exit(1)
         
     case_ids = [r['case_id'] for r in rows]
@@ -82,7 +82,7 @@ def test_dataset_validation():
         print("FAIL: Case IDs are not unique.")
         sys.exit(1)
         
-    required_columns = ["case_id", "symptom", "topology_note", "show_outputs", "expected_fault", "osi_layer", "concept", "severity"]
+    required_columns = ["case_id", "symptom", "topology_note", "show_outputs", "expected_fault", "osi_layer", "concept", "severity", "expected_fix", "verification"]
     for col in required_columns:
         if col not in rows[0].keys():
             print(f"FAIL: Required column {col} is missing.")
@@ -94,7 +94,7 @@ def test_dataset_validation():
                 print(f"FAIL: Row {i+1} has empty required field: {col}")
                 sys.exit(1)
                 
-    categories = {"VLAN": 0, "Gateway": 0, "DHCP": 0, "DNS": 0, "Routing": 0, "ACL": 0, "NAT": 0, "Wireless": 0, "Interface/connectivity": 0}
+    categories = {"VLAN": 0, "Gateway": 0, "DHCP": 0, "DNS": 0, "Routing": 0, "ACL": 0, "NAT": 0, "Wireless": 0}
     for row in rows:
         concept = row['concept']
         if concept in categories:
@@ -103,7 +103,7 @@ def test_dataset_validation():
             print(f"FAIL: Unknown concept '{concept}' found.")
             sys.exit(1)
             
-    expected_categories = {"VLAN": 4, "Gateway": 2, "DHCP": 4, "DNS": 3, "Routing": 5, "ACL": 4, "NAT": 3, "Wireless": 2, "Interface/connectivity": 3}
+    expected_categories = {"VLAN": 5, "Gateway": 4, "DHCP": 5, "DNS": 4, "Routing": 5, "ACL": 4, "NAT": 4, "Wireless": 4}
     for cat, count in expected_categories.items():
         if categories[cat] != count:
             print(f"FAIL: Category {cat} expected {count} cases, found {categories[cat]}.")
