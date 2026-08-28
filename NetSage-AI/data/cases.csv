@@ -1,0 +1,228 @@
+case_id,symptom,topology_note,show_outputs,expected_fault,osi_layer,concept,severity
+NET-001,PC1 cannot ping PC2. Both are in the same department but connected to different switches.,PC1 -> SW1 -> SW2 -> PC2,"SW1# show interfaces trunk
+Port   Mode   Encapsulation  Status  Native vlan
+Gi0/1  on     802.1q         trunking 1
+
+SW2# show interfaces trunk
+Port   Mode   Encapsulation  Status  Native vlan
+Gi0/1  on     802.1q         trunking 1
+
+SW1# show vlan brief
+10   Sales    active    Fa0/1
+
+SW2# show vlan brief
+20   IT       active    Fa0/1",PC1 and PC2 are assigned to different VLANs (10 and 20) on their respective access ports.,Layer 2,VLAN,Medium
+NET-002,New PC connected to SW1 Fa0/2 cannot reach the network.,PC -> SW1 (Fa0/2),"SW1# show vlan brief
+1    default  active    Fa0/1, Fa0/3
+
+SW1# show interfaces Fa0/2 switchport
+Name: Fa0/2
+Switchport: Enabled
+Administrative Mode: static access
+Operational Mode: static access
+Access Mode VLAN: 10 (Inactive)",VLAN 10 is configured on the access port but missing from the VLAN database.,Layer 2,VLAN,Medium
+NET-003,Traffic from VLAN 30 cannot cross between Switch A and Switch B. Other VLANs work fine.,SW_A -> trunk -> SW_B,"SW_A# show interfaces trunk
+Port        Vlans allowed on trunk
+Gi0/1       10,20,30
+
+SW_B# show interfaces trunk
+Port        Vlans allowed on trunk
+Gi0/1       10,20",VLAN 30 is not allowed on the trunk link on Switch B.,Layer 2,VLAN,High
+NET-004,CDP messages indicate a 'Native VLAN mismatch' on the trunk between SW1 and SW2.,SW1 (Gi0/1) -> SW2 (Gi0/1),"SW1# show interfaces Gi0/1 switchport
+Trunking Native Mode VLAN: 99 (Management)
+
+SW2# show interfaces Gi0/1 switchport
+Trunking Native Mode VLAN: 1 (default)",Native VLAN mismatch across the trunk link (99 vs 1).,Layer 2,VLAN,Low
+NET-005,PC1 can ping other PCs in its subnet but cannot reach the internet or other subnets.,PC1 (192.168.1.50) -> SW1 -> R1 (192.168.1.1),"C:\> ipconfig
+IPv4 Address: 192.168.1.50
+Subnet Mask: 255.255.255.0
+Default Gateway: 192.168.1.254
+
+R1# show ip interface brief
+GigabitEthernet0/0     192.168.1.1     YES manual up                    up",Incorrect default gateway configured on PC1 (192.168.1.254 instead of 192.168.1.1).,Layer 3,Gateway,High
+NET-006,Entire branch office cannot access the main headquarters network.,Branch PCs -> SW -> R_Branch (Gi0/0),"R_Branch# show ip interface brief
+Interface              IP-Address      OK? Method Status                Protocol
+GigabitEthernet0/0     10.1.1.1        YES manual administratively down down
+GigabitEthernet0/1     192.168.100.1   YES manual up                    up",The gateway interface (Gi0/0) on the branch router is administratively down.,Layer 1,Interface/connectivity,Critical
+NET-007,Server cannot reach external networks despite seemingly correct IP settings.,Server (10.0.0.10/24) -> Router (10.0.1.1/24),"Server# ipconfig
+IPv4 Address: 10.0.0.10
+Subnet Mask: 255.255.255.0
+Default Gateway: 10.0.1.1
+
+Router# show running-config interface Gi0/0
+interface GigabitEthernet0/0
+ ip address 10.0.1.1 255.255.255.0",Server's default gateway is on a different subnet (10.0.1.x) than the server's IP (10.0.0.x).,Layer 3,Gateway,High
+NET-008,New clients connecting to the network fail to get an IP address and receive APIPA addresses instead.,Clients -> SW1 -> R1 (DHCP Server),"R1# show ip dhcp pool LAN
+Pool LAN :
+ Utilization mark (high/low)    : 100 / 0
+ Subnet size (first/next)       : 0 / 0
+ Total addresses                : 50
+ Leased addresses               : 50
+ Pending event                  : none",DHCP pool is exhausted; 50/50 addresses are leased.,Layer 7,DHCP,High
+NET-009,PCs receive DHCP IP addresses but cannot route traffic off the local subnet.,PCs -> SW1 -> R1 (DHCP),"R1# show running-config | section dhcp
+ip dhcp pool OFFICE
+ network 192.168.10.0 255.255.255.0
+ default-router 192.168.20.1
+ dns-server 8.8.8.8
+
+R1# show ip interface brief
+Gi0/0    192.168.10.1    YES manual up    up",Incorrect default-router in DHCP pool (192.168.20.1 instead of 192.168.10.1).,Layer 7,DHCP,High
+NET-010,Clients on VLAN 20 do not get an IP address. DHCP server is on VLAN 10.,VLAN 20 Clients -> SW (L3) -> DHCP Server (VLAN 10),"SW# show running-config interface Vlan20
+interface Vlan20
+ ip address 10.0.20.1 255.255.255.0
+ ! Missing helper-address
+
+SW# show running-config interface Vlan10
+interface Vlan10
+ ip address 10.0.10.1 255.255.255.0",Missing ip helper-address on the VLAN 20 interface to forward DHCP broadcasts.,Layer 3,DHCP,Medium
+NET-011,Occasional IP conflict warnings on the network. Router interfaces sometimes unreachable.,Router provides DHCP for its own attached subnet.,"Router# show running-config | include dhcp
+ip dhcp pool LOCAL
+ network 192.168.1.0 255.255.255.0
+ default-router 192.168.1.1
+
+Router# show ip dhcp conflict
+IP address        Detection method   Detection time          VRF
+192.168.1.1       Ping               Mar 01 2026 10:00 AM","Router IP (192.168.1.1) is not excluded from the DHCP pool, causing conflicts.",Layer 7,DHCP,High
+NET-012,Users can ping 8.8.8.8 but cannot browse websites by name.,Users -> Router -> ISP,"C:\> ping 8.8.8.8
+Reply from 8.8.8.8: bytes=32 time=20ms TTL=115
+
+C:\> ipconfig /all
+DNS Servers . . . . . . . . . . . : 127.0.0.1",Incorrect DNS server (127.0.0.1) configured via DHCP or statically.,Layer 7,DNS,High
+NET-013,"Internal domain names resolve correctly, but external websites do not.",PC -> Internal DNS Server -> Internet,"DNS_Server# show access-lists
+Extended IP access list OUTBOUND
+ 10 permit tcp any any eq www
+ 20 permit tcp any any eq 443
+ 30 deny ip any any
+
+DNS_Server# show run int Gi0/1
+interface GigabitEthernet0/1
+ ip access-group OUTBOUND out","ACL permits HTTP/HTTPS but denies other IP traffic, which blocks DNS UDP traffic on port 53.",Layer 4,DNS,Medium
+NET-014,"Host fails to resolve names. DNS server is on a different subnet, routing is fine.",Host -> Router -> DNS Server (10.0.0.53),"Host> ipconfig /all
+DNS Servers . . . . . . . . . . . : 10.0.0.99
+
+Router# show ip route
+C 192.168.1.0 is directly connected, Gi0/0
+C 10.0.0.0 is directly connected, Gi0/1
+
+Host> ping 10.0.0.99
+Request timed out.",The host is configured with an incorrect DNS server IP (10.0.0.99) instead of the actual DNS server (10.0.0.53).,Layer 3,DNS,Medium
+NET-015,PC at branch office cannot reach the head office server subnet (10.0.0.0/24).,Branch (192.168.1.0/24) -> R1 (172.16.0.1) -> R2 (172.16.0.2) -> HQ (10.0.0.0/24),"R1# show ip route
+C 192.168.1.0/24 is directly connected
+C 172.16.0.0/30 is directly connected
+! Note: 10.0.0.0/24 is missing
+
+R2# show ip route
+C 10.0.0.0/24 is directly connected, Gi0/1
+C 172.16.0.0/30 is directly connected, Gi0/0
+
+R1# ping 10.0.0.10
+.....
+Success rate is 0 percent (0/5)",Missing static route to 10.0.0.0/24 on R1.,Layer 3,Routing,Critical
+NET-016,Internet access is down for all users on R1.,R1 (Gi0/0: 10.1.1.2) -> ISP Router (Gi0/0: 10.1.1.1),"R1# show running-config | include ip route
+ip route 0.0.0.0 0.0.0.0 10.1.1.254
+
+R1# show ip interface brief
+Gi0/0  10.1.1.2  YES manual up up",Incorrect static default route next-hop (10.1.1.254 instead of 10.1.1.1).,Layer 3,Routing,Critical
+NET-017,OSPF neighbor relationship is not forming between R1 and R2.,R1 (192.168.12.1) <-> R2 (192.168.12.2),"R1# show running-config | section ospf
+router ospf 1
+ network 10.0.0.0 0.0.0.255 area 0
+
+R1# show ip interface brief
+Gi0/0   192.168.12.1   YES manual up up
+
+R2# show ip ospf neighbor
+(no output)",Missing OSPF network command for the 192.168.12.0 network on R1.,Layer 3,Routing,High
+NET-018,EIGRP routing table on R1 does not contain routes from R2.,R1 <-> R2,"R1# show ip protocols
+Routing Protocol is 'eigrp 100'
+
+R2# show ip protocols
+Routing Protocol is 'eigrp 200'",EIGRP Autonomous System (AS) number mismatch (100 vs 200).,Layer 3,Routing,High
+NET-019,R2 receives no RIP updates from R1 on their connecting link Gi0/1.,R1 (Gi0/1) <-> R2 (Gi0/1),"R1# show running-config | section router rip
+router rip
+ version 2
+ passive-interface GigabitEthernet0/1
+ network 10.0.0.0
+ network 192.168.1.0",Passive-interface is incorrectly configured on the link connecting to R2 (Gi0/1).,Layer 3,Routing,Medium
+NET-020,Users on 192.168.1.0 cannot access the web server at 10.0.0.80 over HTTP.,Users -> R1 (Gi0/1) -> Web Server,"R1# show access-lists
+Extended IP access list 101
+ 10 deny tcp 192.168.1.0 0.0.0.255 host 10.0.0.80 eq www (15 matches)
+ 20 permit ip any any
+
+R1# show ip interface Gi0/1
+  Outgoing access list is 101",ACL 101 is applied outbound on Gi0/1 and explicitly denies HTTP traffic from the user subnet to the web server.,Layer 4,ACL,High
+NET-021,"PC1 (10.1.1.10) cannot reach the Internet, but it CAN reach the local printer (10.1.1.20).",PC1 -> R1 (Gi0/0) -> Internet. Printer is on R1 Gi0/0.,"R1# show access-lists 1
+Standard IP access list 1
+ 10 deny 10.1.1.10
+ 20 permit any
+
+R1# show running-config interface Gi0/0
+interface GigabitEthernet0/0
+ ip access-group 1 in","Standard ACL 1 is applied closest to the source (Gi0/0 in), blocking PC1 from reaching all other networks instead of just a specific destination.",Layer 3,ACL,Medium
+NET-022,External SSH access to the admin jump server (192.168.50.5) is failing.,Internet -> R1 (Gi0/0) -> Jump Server,"R1# show access-lists 110
+Extended IP access list 110
+ 10 permit tcp host 192.168.50.5 any eq 22  ! Incorrect
+ ! Intended: permit tcp any host 192.168.50.5 eq 22
+ 20 deny ip any any
+
+R1# show ip interface Gi0/0
+  Inbound access list is 110",Extended ACL 110 has the source and destination IP/ports reversed for inbound traffic.,Layer 4,ACL,High
+NET-023,Ping from internal network to external server fails. ACL 100 is designed to block external pings inbound.,Internal -> R1 (Gi0/1) -> (Gi0/0) External,"R1# show running-config interface Gi0/1
+interface GigabitEthernet0/1
+ ip access-group 100 in
+
+R1# show access-lists 100
+Extended IP access list 100
+ 10 deny icmp any any echo-request
+ 20 permit ip any any",ACL 100 is applied in the wrong direction or wrong interface (applied IN on the internal interface instead of IN on external).,Layer 3,ACL,Medium
+NET-024,Internal users cannot reach the internet. NAT overload is configured.,Internal (Gi0/1) -> R1 -> External (Gi0/0),"R1# show running-config | include ip nat
+ip nat inside source list 1 interface GigabitEthernet0/0 overload
+
+R1# show running-config interface Gi0/0
+interface GigabitEthernet0/0
+ ip nat outside
+
+R1# show running-config interface Gi0/1
+interface GigabitEthernet0/1
+ ! Missing ip nat inside",Missing 'ip nat inside' command on the internal interface Gi0/1.,Layer 3,NAT,High
+NET-025,Only one internal user can access the internet at a time.,Internal -> R1 -> Internet,"R1# show running-config | include ip nat inside source
+ip nat inside source list 1 interface GigabitEthernet0/0
+
+R1# show ip nat translations
+Pro Inside global      Inside local       Outside local      Outside global
+tcp 203.0.113.1:80     192.168.1.10:80    198.51.100.1:80    198.51.100.1:80","The 'overload' keyword is missing from the NAT configuration, preventing PAT.",Layer 4,NAT,High
+NET-026,"Users on the new VLAN 20 (192.168.20.0/24) cannot reach the internet, while VLAN 10 users can.",VLAN 10/20 -> R1 -> Internet,"R1# show access-lists 1
+Standard IP access list 1
+ 10 permit 192.168.10.0, wildcard bits 0.0.0.255
+
+R1# show running-config | include nat
+ip nat inside source list 1 interface Gi0/0 overload",The NAT ACL (list 1) does not permit the new VLAN 20 subnet.,Layer 3,NAT,Medium
+NET-027,Wireless clients connect to the 'Guest' SSID but receive IPs from the Corporate VLAN (VLAN 10).,WLC -> SW1. Guest WLAN should be VLAN 50.,"WLC> show wlan 2
+WLAN Identifier.................................. 2
+Profile Name..................................... Guest
+Network Name (SSID).............................. Guest
+Interface........................................ management (VLAN 10)",Guest WLAN is incorrectly mapped to the management interface/VLAN 10 instead of the Guest dynamic interface/VLAN 50.,Layer 2,Wireless,High
+NET-028,Clients cannot join the 'CorpWiFi' SSID. They are prompted for a username/password but expect a PSK.,Laptop -> AP -> WLC,"WLC> show wlan 1
+WLAN Identifier.................................. 1
+Profile Name..................................... CorpWiFi
+Security Policies:
+ WPA2 Encryption.............................. AES
+ Auth Key Management.......................... 802.1x
+
+Laptop (User Report):
+'I am typing the pre-shared key but it fails.'","WLAN is configured for 802.1x (Enterprise) authentication, but the user is expecting a WPA2 PSK.",Layer 2,Wireless,Medium
+NET-029,Switch uplink to the router is physically connected but the link protocol shows down.,SW1 (Gi0/24) -> R1 (Gi0/0),"SW1# show interfaces Gi0/24
+GigabitEthernet0/24 is up, line protocol is down (err-disabled)
+
+SW1# show port-security interface Gi0/24
+Port Security              : Enabled
+Port Status                : Secure-down
+Violation Mode             : Shutdown",Port security violation triggered an err-disable state on the switchport.,Layer 2,Interface/connectivity,High
+NET-030,"Performance between the switch and router is extremely slow, and there are many late collisions.",SW1 (Fa0/1) -> R1 (Gi0/0),"SW1# show interfaces Fa0/1
+FastEthernet0/1 is up, line protocol is up
+  Half-duplex, 100Mb/s
+  0 runts, 0 giants, 0 throttles
+  4560 input errors, 0 CRC, 0 frame, 0 overrun, 0 ignored
+
+R1# show interfaces Gi0/0
+GigabitEthernet0/0 is up, line protocol is up
+  Full-duplex, 100Mb/s",Speed/duplex mismatch between the switch (Half-duplex) and router (Full-duplex).,Layer 1,Interface/connectivity,Medium
