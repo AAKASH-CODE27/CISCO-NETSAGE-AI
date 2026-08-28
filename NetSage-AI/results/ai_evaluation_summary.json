@@ -1,0 +1,98 @@
+{
+  "total_cases": 35,
+  "successful_diagnoses": 35,
+  "failed_diagnoses": 0,
+  "root_cause_accuracy": 1.0,
+  "severity_accuracy": 1.0,
+  "osi_accuracy": null,
+  "evidence_grounding_rate": 1.0,
+  "avg_confidence": 0.9,
+  "confidence_distribution": {
+    "high": 35,
+    "medium": 0,
+    "low": 0
+  },
+  "confidence_accuracy_breakdown": {
+    "high": {
+      "total": 35,
+      "correct": 35,
+      "wrong": 0
+    },
+    "medium": {
+      "total": 0,
+      "correct": 0,
+      "wrong": 0
+    },
+    "low": {
+      "total": 0,
+      "correct": 0,
+      "wrong": 0
+    }
+  },
+  "category_metrics": {
+    "VLAN": {
+      "category": "VLAN",
+      "total_cases": 5,
+      "successful": 5,
+      "root_cause_accuracy": 1.0,
+      "severity_accuracy": 1.0,
+      "evidence_grounding_rate": 1.0
+    },
+    "Gateway": {
+      "category": "Gateway",
+      "total_cases": 4,
+      "successful": 4,
+      "root_cause_accuracy": 1.0,
+      "severity_accuracy": 1.0,
+      "evidence_grounding_rate": 1.0
+    },
+    "DHCP": {
+      "category": "DHCP",
+      "total_cases": 5,
+      "successful": 5,
+      "root_cause_accuracy": 1.0,
+      "severity_accuracy": 1.0,
+      "evidence_grounding_rate": 1.0
+    },
+    "DNS": {
+      "category": "DNS",
+      "total_cases": 4,
+      "successful": 4,
+      "root_cause_accuracy": 1.0,
+      "severity_accuracy": 1.0,
+      "evidence_grounding_rate": 1.0
+    },
+    "Routing": {
+      "category": "Routing",
+      "total_cases": 5,
+      "successful": 5,
+      "root_cause_accuracy": 1.0,
+      "severity_accuracy": 1.0,
+      "evidence_grounding_rate": 1.0
+    },
+    "ACL": {
+      "category": "ACL",
+      "total_cases": 4,
+      "successful": 4,
+      "root_cause_accuracy": 1.0,
+      "severity_accuracy": 1.0,
+      "evidence_grounding_rate": 1.0
+    },
+    "NAT": {
+      "category": "NAT",
+      "total_cases": 4,
+      "successful": 4,
+      "root_cause_accuracy": 1.0,
+      "severity_accuracy": 1.0,
+      "evidence_grounding_rate": 1.0
+    },
+    "Wireless": {
+      "category": "Wireless",
+      "total_cases": 4,
+      "successful": 4,
+      "root_cause_accuracy": 1.0,
+      "severity_accuracy": 1.0,
+      "evidence_grounding_rate": 1.0
+    }
+  }
+}
