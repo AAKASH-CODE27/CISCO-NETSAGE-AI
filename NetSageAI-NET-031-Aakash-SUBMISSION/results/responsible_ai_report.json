@@ -1,0 +1,107 @@
+{
+  "total_reviewed": 35,
+  "accepted": 27,
+  "edited": 5,
+  "rejected": 3,
+  "corrected_cases": 8,
+  "correction_categories": {
+    "INCOMPLETE_FIX": 3,
+    "WRONG_ROOT_CAUSE": 5
+  },
+  "issue_type_corrections": {
+    "VLAN": 1,
+    "Gateway": 1,
+    "DHCP": 1,
+    "DNS": 1,
+    "Routing": 1,
+    "ACL": 1,
+    "NAT": 1,
+    "Wireless": 1
+  },
+  "high_confidence_errors": [
+    {
+      "case_id": "NET-031",
+      "issue_type": "VLAN",
+      "ai_root_cause": "Port Fa0/5 is unassigned and defaulting to VLAN 1.",
+      "ai_confidence": 0.89,
+      "human_decision": "EDIT",
+      "human_root_cause": "Port Fa0/5 is assigned to VLAN 1 (default) instead of VLAN 50 (Engineering).",
+      "correction_category": "INCOMPLETE_FIX",
+      "reason": "AI correctly identified VLAN issue but human reviewer clarified exact missing target VLAN (VLAN 50)."
+    },
+    {
+      "case_id": "NET-032",
+      "issue_type": "Gateway",
+      "ai_root_cause": "Default gateway IP is mistyped as 192.168.1.250 instead of 192.168.1.254.",
+      "ai_confidence": 0.86,
+      "human_decision": "EDIT",
+      "human_root_cause": "Default gateway IP on PC1 is set to 192.168.1.250 which does not exist on R1 Gi0/0 (192.168.1.254).",
+      "correction_category": "INCOMPLETE_FIX",
+      "reason": "AI attributed failure to routing table; reviewer corrected to host IP configuration typo."
+    },
+    {
+      "case_id": "NET-033",
+      "issue_type": "DHCP",
+      "ai_root_cause": "DHCP server service is turned off globally.",
+      "ai_confidence": 0.82,
+      "human_decision": "REJECT",
+      "human_root_cause": "DHCP network statement subnet 192.168.2.0/24 mismatches interface Gi0/1 IP 192.168.10.1/24.",
+      "correction_category": "WRONG_ROOT_CAUSE",
+      "reason": "AI wrongly claimed service dhcp was disabled. Show run showed service enabled but wrong network statement."
+    },
+    {
+      "case_id": "NET-034",
+      "issue_type": "DNS",
+      "ai_root_cause": "DNS server hostname resolution is disabled on local gateway router.",
+      "ai_confidence": 0.81,
+      "human_decision": "EDIT",
+      "human_root_cause": "Router missing ip domain-lookup and ip name-server 8.8.8.8 configuration statements.",
+      "correction_category": "INCOMPLETE_FIX",
+      "reason": "AI diagnosis was vague; reviewer specified exact missing Cisco IOS commands."
+    },
+    {
+      "case_id": "NET-019",
+      "issue_type": "Routing",
+      "ai_root_cause": "Interface Gi0/0 is configured as passive-interface under RIP process.",
+      "ai_confidence": 0.83,
+      "human_decision": "REJECT",
+      "human_root_cause": "RIP version mismatch: R1 is running RIPv1 while R2 sends RIPv2 updates.",
+      "correction_category": "WRONG_ROOT_CAUSE",
+      "reason": "AI claimed passive-interface issue, but show run shows no passive-interface line. Fault is RIP version mismatch."
+    },
+    {
+      "case_id": "NET-023",
+      "issue_type": "ACL",
+      "ai_root_cause": "ACL 100 applied in out direction instead of in direction on Gi0/0.",
+      "ai_confidence": 0.85,
+      "human_decision": "EDIT",
+      "human_root_cause": "ACL 100 applied inbound on wrong interface Gi0/1 instead of target LAN interface Gi0/0.",
+      "correction_category": "WRONG_ROOT_CAUSE",
+      "reason": "AI correctly identified directional error but missed interface assignment mismatch."
+    },
+    {
+      "case_id": "NET-035",
+      "issue_type": "NAT",
+      "ai_root_cause": "Static NAT entry maps public IP to wrong internal IP address.",
+      "ai_confidence": 0.84,
+      "human_decision": "EDIT",
+      "human_root_cause": "Static NAT translation rule has typo in inside local address (192.168.1.50 vs server IP 192.168.1.5).",
+      "correction_category": "WRONG_ROOT_CAUSE",
+      "reason": "AI diagnosed static NAT error; reviewer corrected exact internal server host IP."
+    },
+    {
+      "case_id": "NET-030",
+      "issue_type": "Wireless",
+      "ai_root_cause": "Guest client isolation ACL not applied on switch access port.",
+      "ai_confidence": 0.8,
+      "human_decision": "REJECT",
+      "human_root_cause": "AP switch port Fa0/12 missing switchport trunk allowed vlan 50 for Guest WLAN traffic.",
+      "correction_category": "WRONG_ROOT_CAUSE",
+      "reason": "AI blamed guest isolation ACL; show interfaces trunk confirmed VLAN 50 was missing on AP trunk link."
+    }
+  ],
+  "lessons_learned_summary": [
+    "Verify exact interface status and VLAN allowed lists before assuming Layer 3 routing failures.",
+    "Provide exact Cisco IOS syntax commands in remediation recommendations."
+  ]
+}

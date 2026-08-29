@@ -1,0 +1,74 @@
+{
+  "description": "Deterministic test examples for the NetSage AI rule checker. These are NOT AI results — they are structured inputs for validation.",
+  "examples": [
+    {
+      "label": "Duplicate IP scenario",
+      "snapshot": {
+        "hosts": [
+          {"device": "Host_A", "ip_address": "192.168.10.10", "subnet_mask": "255.255.255.0"},
+          {"device": "Host_B", "ip_address": "192.168.10.10", "subnet_mask": "255.255.255.0"}
+        ]
+      },
+      "expected_rule": "duplicate_ip",
+      "expected_status": "FAIL"
+    },
+    {
+      "label": "Invalid subnet mask",
+      "snapshot": {
+        "hosts": [
+          {"device": "BadMask", "ip_address": "172.16.0.5", "subnet_mask": "255.255.0.255"}
+        ]
+      },
+      "expected_rule": "wrong_subnet_mask",
+      "expected_status": "FAIL"
+    },
+    {
+      "label": "Gateway mismatch",
+      "snapshot": {
+        "hosts": [
+          {"device": "Server", "ip_address": "10.0.0.10", "subnet_mask": "255.255.255.0", "default_gateway": "10.0.1.1"}
+        ]
+      },
+      "expected_rule": "gateway_mismatch",
+      "expected_status": "FAIL"
+    },
+    {
+      "label": "Interface administratively down",
+      "snapshot": {
+        "interfaces": [
+          {"device": "R_Branch", "interface_name": "Gi0/0", "status": "administratively down", "protocol": "down"}
+        ]
+      },
+      "expected_rule": "interface_down",
+      "expected_status": "FAIL"
+    },
+    {
+      "label": "Missing VLAN",
+      "snapshot": {
+        "vlans": [
+          {"device": "SW1", "vlan_id": 1, "vlan_name": "default"},
+          {"device": "SW1", "vlan_id": 20, "vlan_name": "IT"}
+        ],
+        "vlan_assignments": [
+          {"device": "SW1", "interface_name": "Fa0/2", "access_vlan": 10}
+        ]
+      },
+      "expected_rule": "missing_vlan",
+      "expected_status": "FAIL"
+    },
+    {
+      "label": "Missing route",
+      "snapshot": {
+        "routes": [
+          {"device": "R1", "destination": "192.168.1.0/24"},
+          {"device": "R1", "destination": "172.16.0.0/30"}
+        ],
+        "required_routes": [
+          {"device": "R1", "destination": "10.0.0.0/24"}
+        ]
+      },
+      "expected_rule": "missing_route",
+      "expected_status": "FAIL"
+    }
+  ]
+}
